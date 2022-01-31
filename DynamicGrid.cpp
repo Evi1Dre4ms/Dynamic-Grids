@@ -355,22 +355,22 @@ Delivered Grid::Resize(int radius)
 	if (dt > 0 && nRadius < nLimMax)
 		for (int idx = 0; idx < dt; idx++)
 		{
+			nRadius++;
+
 			delivered += Expand(Direction::FRONT);
 			delivered += Expand(Direction::BACK);
 			delivered += Expand(Direction::LEFT);
 			delivered += Expand(Direction::RIGHT);
-
-			nRadius++;
 		}
 	else if (dt < 0 && nRadius > nLimMin)
 		for (int idx = 0; idx < std::abs(dt); idx++)
 		{
+			nRadius--;
+
 			delivered += NarrowDown(Direction::FRONT);
 			delivered += NarrowDown(Direction::BACK);
 			delivered += NarrowDown(Direction::LEFT);
 			delivered += NarrowDown(Direction::RIGHT);
-
-			nRadius--;
 		}
 
 	return delivered;
@@ -578,44 +578,45 @@ Cell::ptr Grid::FindLast(Direction direction)
 {
 	if (!IsValid(root)) return nullptr;
 
+	Cell::ptr c = root;
+
 	switch (direction)
 	{
 	case Direction::FRONT:
-		break;
 	case Direction::BACK:
-		break;
 	case Direction::LEFT:
-		break;
 	case Direction::RIGHT:
-		/*for (Cell::ptr c = ch; IsValid(c); c = c->GetN(direction))
+		for (int i = 0; IsValid(c) && i < this->GetRadius() - 1; i++)
 		{
-			if (!c->GetN(direction)) return c;
-			break;
-		}*/
+			if (IsValid(c->GetN(direction)))
+				c = c->GetN(direction);
+			else
+			{
+				// something wrong
+			}
+		}
 		break;
 
 	case Direction::FRONT_RIGHT: // go to last FRONT, then go to last RIGHT
-		for (Cell::ptr c = root; IsValid(c); c = c->GetN(Direction::FRONT))
-			if (!c->GetN(Direction::FRONT))
-			{
-				for (; c; c = c->GetN(Direction::RIGHT))
-					if (!c->GetN(Direction::RIGHT)) return c;
-				break;
-			}
+		c = FindLast(Dir::FRONT);
+		for (int i = 0; IsValid(c) && i < this->GetRadius() - 1; i++)
+		{
+			if (IsValid(c->GetN(Direction::RIGHT)))
+				c = c->GetN(Direction::RIGHT);
+		}
 		break;
 
 	case Direction::BACK_LEFT: // go to last BACK, then go to last LEFT
-		for (Cell::ptr c = root; IsValid(c); c = c->GetN(Direction::BACK))
-			if (!c->GetN(Direction::BACK))
-			{
-				for (; IsValid(c); c = c->GetN(Direction::LEFT))
-					if (!c->GetN(Direction::LEFT)) return c;
-				break;
-			}
+		c = FindLast(Dir::BACK);
+		for (int i = 0; IsValid(c) && i < this->GetRadius() - 1; i++)
+		{
+			if (IsValid(c->GetN(Direction::LEFT)))
+				c = c->GetN(Direction::LEFT);
+		}
 		break;
 	}
 
-	return nullptr;
+	return c;
 }
 
 TArray<Cell::ptr> Grid::SelectBorder(Direction direction)

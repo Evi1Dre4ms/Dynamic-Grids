@@ -83,6 +83,7 @@ namespace serenity
 	{
 	public:
 		typedef Cell::Direction Direction;
+		typedef Cell::Direction Dir;
 		typedef TSharedPtr<Grid> ptr;
 
 	public:
