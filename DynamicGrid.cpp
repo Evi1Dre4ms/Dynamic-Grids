@@ -625,33 +625,63 @@ TArray<Cell::ptr> Grid::SelectBorder(Direction direction)
 	if (!IsValid(root))
 		throw;
 
-	auto current = root;
+	auto c = root;
+
+	auto dRad = this->GetRadius() * 2 - 1;
 
 	// Find border chunks
 	switch (direction)
 	{
 	case Direction::FRONT:
-		current = FindLast(Direction::FRONT_RIGHT);
-		for (; IsValid(current); current = current->GetN(Direction::LEFT))
-			borderList.Push(current);
+		c = FindLast(Direction::FRONT_RIGHT);
+		for (int i = 0; IsValid(c) && i < dRad; i++)
+		{
+			borderList.Push(c);
+
+			if (IsValid(c->GetN(Direction::LEFT)))
+				c = c->GetN(Direction::LEFT);
+			else
+				break;
+		}
 		break;
 
 	case Direction::BACK:
-		current = FindLast(Direction::BACK_LEFT);
-		for (; IsValid(current); current = current->GetN(Direction::RIGHT))
-			borderList.Push(current);
+		c = FindLast(Direction::BACK_LEFT);
+		for (int i = 0; IsValid(c) && i < dRad; i++)
+		{
+			borderList.Push(c);
+
+			if (IsValid(c->GetN(Direction::RIGHT)))
+				c = c->GetN(Direction::RIGHT);
+			else
+				break;
+		}
 		break;
 
 	case Direction::LEFT:
-		current = FindLast(Direction::BACK_LEFT);
-		for (; IsValid(current); current = current->GetN(Direction::FRONT))
-			borderList.Push(current);
+		c = FindLast(Direction::BACK_LEFT);
+		for (int i = 0; IsValid(c) && i < dRad; i++)
+		{
+			borderList.Push(c);
+
+			if (IsValid(c->GetN(Direction::FRONT)))
+				c = c->GetN(Direction::FRONT);
+			else
+				break;
+		}
 		break;
 
 	case Direction::RIGHT:
-		current = FindLast(Direction::FRONT_RIGHT);
-		for (; IsValid(current); current = current->GetN(Direction::BACK))
-			borderList.Push(current);
+		c = FindLast(Direction::FRONT_RIGHT);
+		for (int i = 0; IsValid(c) && i < dRad; i++)
+		{
+			borderList.Push(c);
+
+			if (IsValid(c->GetN(Direction::BACK)))
+				c = c->GetN(Direction::BACK);
+			else
+				break;
+		}
 		break;
 
 	default:
