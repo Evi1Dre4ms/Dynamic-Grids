@@ -37,7 +37,7 @@ namespace serenity
 
 		void*& GetData();
 
-		size_t NumOwners();
+		size_t& NumOwners();
 		
 		bool IsValid() const;
 
@@ -50,7 +50,7 @@ namespace serenity
 		
 		bool bIsValid = false;
 
-		size_t nNumOwners = 0;
+		size_t nNumOwners = 1;
 
 		void* pMetaData = nullptr;
 
@@ -124,11 +124,12 @@ namespace serenity
 		const int nLimMin = 1;
 
 		//TODO: вести список "выпавших" из области чанков и ими инициализировать новую область, 
-		// вместо того, чтобы удалять полностью структуру через delete
+		// вместо того, чтобы удалять полностью структуру
 		Delivered Expand(Direction direction);
 		Delivered NarrowDown(Direction direction);
 
-		// Cell::ptr MakeCell(FIntPoint index = FIntPoint());
+		// Same as expand, but with considering collided grids
+		Delivered Expand(Direction direction, TArray<Grid::ptr>& collideGrids);
 
 		bool Link(Cell::ptr g1, Cell::ptr g2);
 		bool LinkNeighbours(Cell::ptr g);
@@ -138,6 +139,9 @@ namespace serenity
 		TArray<Cell::ptr> SelectBorder(Direction direction);
 
 		Cell::ptr FindLast(Direction direction);
+		Cell::ptr FindCellByIndex(FIntPoint index);
+		TArray<Grid::ptr> FindCollidedGrids();
+
 		Direction IndexToDirection(FIntPoint& idx);
 		
 		// Get direction clockwise
@@ -145,6 +149,9 @@ namespace serenity
 
 		// Get direction counterclockwise
 		Direction GetCCW(Direction dir);
+
+		// Get opposite direction
+		Direction GetOpposite(Direction dir);
 
 		TArray<Grid::ptr>& rootGrids;
 

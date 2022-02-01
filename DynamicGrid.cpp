@@ -98,6 +98,46 @@ Cell::Direction Grid::GetCCW(Direction dir)
 	return Direction::UNDEFINED;
 }
 
+Cell::Direction Grid::GetOpposite(Direction dir)
+{
+	switch (dir)
+	{
+	case Direction::FRONT:
+		return Direction::BACK;
+		break;
+
+	case Direction::BACK:
+		return Direction::FRONT;
+		break;
+
+	case Direction::LEFT:
+		return Direction::RIGHT;
+		break;
+
+	case Direction::RIGHT:
+		return Direction::LEFT;
+		break;
+
+	case Direction::FRONT_RIGHT:
+		return Direction::BACK_LEFT;
+		break;
+
+	case Direction::BACK_RIGHT:
+		return Direction::FRONT_LEFT;
+		break;
+
+	case Direction::BACK_LEFT:
+		return Direction::FRONT_RIGHT;
+		break;
+
+	case Direction::FRONT_LEFT:
+		return Direction::BACK_RIGHT;
+		break;
+	}
+
+	return Direction::UNDEFINED;
+}
+
 bool Grid::Link(Cell::ptr g1, Cell::ptr g2)
 {
 	if (!IsValid(g1) || !IsValid(g2))
@@ -393,6 +433,7 @@ Delivered Grid::MoveTo(int x, int y)
 			return dt.X - 1 < (half_r1 + half_r2) && dt.Y - 1 < (half_r1 + half_r2);
 		});
 
+	// TEMP
 	for (auto grid : CollideGrids)
 	{
 		check(GEngine != nullptr);
@@ -409,6 +450,7 @@ Delivered Grid::MoveTo(int x, int y)
 	{
 		auto radius = nRadius;
 
+		// TODO: мега важно исправить, чтобы работало с новым Expand()
 		delivered += Clear();
 		delivered += Init(x, y, radius);
 	}
@@ -418,62 +460,34 @@ Delivered Grid::MoveTo(int x, int y)
 		Cell::ptr ch = root;
 
 		// For X axis
-		if (FMath::Sign(dt.X) > 0) // To left X+
+		for (int i = 0; i < FMath::Abs(dt.X) && IsValid(ch); i++)
 		{
-			for (int i = 0; i < dt.X && IsValid(ch); i++)
-			{
-				ch = ch->GetN(Direction::LEFT);
-				if (IsValid(ch))
-				{
-					delivered += NarrowDown(Direction::RIGHT);
-					delivered += Expand(Direction::LEFT);
+			Dir dir = FMath::Sign(dt.X) > 0 ? Dir::LEFT : Dir::RIGHT;
 
-					root = ch;
-				}
-			}
-		}
-		else if (FMath::Sign(dt.X) < 0) // To right X-
-		{
-			for (int i = 0; i > dt.X && IsValid(ch); i--)
+			if (IsValid(ch->GetN(dir)))
 			{
-				ch = ch->GetN(Direction::RIGHT);
-				if (IsValid(ch))
-				{
-					delivered += NarrowDown(Direction::LEFT);
-					delivered += Expand(Direction::RIGHT);
+				ch = ch->GetN(dir);
 
-					root = ch;
-				}
+				delivered += NarrowDown(GetOpposite(dir));
+				delivered += Expand(dir, CollideGrids);
+
+				root = ch;
 			}
 		}
 
 		// For Y axis
-		if (FMath::Sign(dt.Y) > 0)
+		for (int i = 0; i < FMath::Abs(dt.Y) && IsValid(ch); i++)
 		{
-			for (int i = 0; i < dt.Y && IsValid(ch); i++) // To front Y+
-			{
-				ch = ch->GetN(Direction::FRONT);
-				if (IsValid(ch))
-				{
-					delivered += NarrowDown(Direction::BACK);
-					delivered += Expand(Direction::FRONT);
+			Dir dir = FMath::Sign(dt.Y) > 0 ? Dir::FRONT : Dir::BACK;
 
-					root = ch;
-				}
-			}
-		}
-		else if (FMath::Sign(dt.Y) < 0)
-		{
-			for (int i = 0; i > dt.Y && IsValid(ch); i--) // To back Y-
+			if (IsValid(ch->GetN(dir)))
 			{
-				ch = ch->GetN(Direction::BACK);
-				if (IsValid(ch))
-				{
-					delivered += NarrowDown(Direction::FRONT);
-					delivered += Expand(Direction::BACK);
+				ch = ch->GetN(dir);
 
-					root = ch;
-				}
+				delivered += NarrowDown(GetOpposite(dir));
+				delivered += Expand(dir, CollideGrids);
+
+				root = ch;
 			}
 		}
 	}
@@ -635,6 +649,70 @@ Cell::ptr Grid::FindLast(Direction direction)
 	return c;
 }
 
+TArray<Grid::ptr> Grid::FindCollidedGrids()
+{
+	return {};
+}
+
+Cell::ptr Grid::FindCellByIndex(FIntPoint index)
+{
+	auto rootIndex = root->GetIndex();
+	auto dt = index - rootIndex;
+
+	// Check if index in grid field
+	if (FMath::Abs(dt.X) >= nRadius || FMath::Abs(dt.Y) >= nRadius)
+		return nullptr;
+
+	// Find cell
+	Cell::ptr c = root;
+
+	// Axis X
+	if (FMath::Sign(dt.X) > 0) // To left X+
+	{
+		for (int i = 0; i < dt.X && IsValid(c); i++)
+		{
+			if (IsValid(c->GetN(Direction::LEFT)))
+				c = c->GetN(Direction::LEFT);
+			else
+				throw;
+		}
+	}
+	else if (FMath::Sign(dt.X) < 0) // To right X-
+	{
+		for (int i = 0; i > dt.X && IsValid(c); i--)
+		{
+			if (IsValid(c->GetN(Direction::RIGHT)))
+				c = c->GetN(Direction::RIGHT);
+			else
+				throw;
+		}
+	}
+
+	// Axis Y
+	if (FMath::Sign(dt.Y) > 0) // To left X+
+	{
+		for (int i = 0; i < dt.Y && IsValid(c); i++)
+		{
+			if (IsValid(c->GetN(Direction::FRONT)))
+				c = c->GetN(Direction::FRONT);
+			else
+				throw;
+		}
+	}
+	else if (FMath::Sign(dt.Y) < 0) // To right X-
+	{
+		for (int i = 0; i > dt.Y && IsValid(c); i--)
+		{
+			if (IsValid(c->GetN(Direction::BACK)))
+				c = c->GetN(Direction::BACK);
+			else
+				throw;
+		}
+	}
+
+	return c;
+}
+
 TArray<Cell::ptr> Grid::SelectBorder(Direction direction)
 {
 	TArray<Cell::ptr> borderList;
@@ -715,12 +793,11 @@ Delivered Grid::Expand(Direction direction)
 		return delivered;
 
 	// Find border chunks
-	TArray<Cell::ptr> toExpand = SelectBorder(direction);
+	TArray<Cell::ptr> border = SelectBorder(direction);
 
 	// Generate new borders and prepare link list
 	TArray<Cell::ptr> toLink;
-
-	for (auto cc : toExpand)
+	for (auto cc : border)
 		toLink.Push(MakeNeighbour(cc, direction));
 
 	// Link neighbours
@@ -732,6 +809,63 @@ Delivered Grid::Expand(Direction direction)
 
 	// Fill newly created data
 	delivered.created.Append(toLink);
+
+	return delivered;
+}
+
+Delivered Grid::Expand(Direction direction, TArray<Grid::ptr>& collideGrids)
+{
+	Delivered delivered;
+
+	if (!IsValid(root))
+		return delivered;
+
+	if (collideGrids.Num())
+	{
+		// Collect all cells in border
+		TArray<Cell::ptr> borderCells = SelectBorder(direction);
+
+		// Collect cell indices to expand
+		TMap<FIntPoint, Cell::ptr> toExpandIndices;
+		for (auto grid : borderCells)
+			toExpandIndices.Add(grid->GetIndex() + GetPosFromDir(direction), grid);
+
+		// нужно или нет?
+		TArray<Cell::ptr> toLink;
+
+		// alternate Expand
+		for (auto idx : toExpandIndices)
+		{
+			Cell::ptr cell = nullptr;
+
+			// Find cell in other grids
+			for (auto collidedGrid : collideGrids)
+			{
+				cell = collidedGrid->FindCellByIndex(idx.Key);
+				if (IsValid(cell)) break;
+			}
+
+			// If exist, link it with current grid
+			if (IsValid(cell))
+			{
+				idx.Value->SetN(direction, cell);
+				Link(cell, idx.Value);
+
+				cell->NumOwners()++;
+			}
+			// Otherwise create cell
+			else
+				toLink.Push(MakeNeighbour(idx.Value, direction));
+		}
+
+		// Link neighbours
+		for (auto cc : toLink)
+			LinkNeighbours(cc);
+
+		delivered.created.Append(toLink);
+	}
+	else
+		delivered += Expand(direction);
 
 	return delivered;
 }
@@ -774,17 +908,16 @@ Delivered Grid::NarrowDown(Direction direction)
 	TArray<Cell::ptr> toRemove = SelectBorder(direction);
 	for (auto cc : toRemove)
 	{
+		// Если есть другой владелец, то уменьшаем кол-во и скип
+		if (cc->NumOwners() > 1)
+		{
+			cc->NumOwners()--;
+			continue;
+		}
+
 		if (!IsValid(cc)) continue;
 
 		toUnlink.Push(cc->GetN(inversedDir));
-
-		// Fill data to delete
-		if (cc->GetData() == nullptr)
-		{
-			int a = 10;
-			a++;
-		}
-
 		delivered.deleted.Push(cc->GetData());
 		
 		// Reset current cell
@@ -844,7 +977,7 @@ void*& Cell::GetData()
 	return pMetaData;
 }
 
-size_t Cell::NumOwners()
+size_t& Cell::NumOwners()
 {
 	return nNumOwners;
 }
