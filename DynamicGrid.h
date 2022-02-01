@@ -110,6 +110,8 @@ namespace serenity
 		// Returns current root cell
 		Cell::ptr GetRoot();
 
+		const FIntPoint GetPosFromDir(Direction dir);
+
 		int GetRadius() const;
 
 	private:

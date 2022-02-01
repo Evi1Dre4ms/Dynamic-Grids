@@ -280,41 +280,7 @@ Cell::ptr Grid::MakeNeighbour(Cell::ptr ch, Direction dir)
 	cells.Push(neighbour);
 
 	auto idx = ch->GetIndex();
-
-	switch (dir)
-	{
-	case Direction::FRONT:
-		neighbour->SetIndex(idx.X, idx.Y + 1);
-		break;
-
-	case Direction::BACK:
-		neighbour->SetIndex(idx.X, idx.Y - 1);
-		break;
-
-	case Direction::LEFT:
-		neighbour->SetIndex(idx.X + 1, idx.Y);
-		break;
-
-	case Direction::RIGHT:
-		neighbour->SetIndex(idx.X - 1, idx.Y);
-		break;
-
-	case Direction::FRONT_RIGHT:
-		neighbour->SetIndex(idx.X - 1, idx.Y + 1);
-		break;
-
-	case Direction::BACK_RIGHT:
-		neighbour->SetIndex(idx.X - 1, idx.Y - 1);
-		break;
-
-	case Direction::BACK_LEFT:
-		neighbour->SetIndex(idx.X + 1, idx.Y - 1);
-		break;
-
-	case Direction::FRONT_LEFT:
-		neighbour->SetIndex(idx.X + 1, idx.Y + 1);
-		break;
-	}
+	neighbour->SetIndex(idx + GetPosFromDir(dir));
 	Link(ch, neighbour);
 
 	return neighbour;
@@ -564,6 +530,49 @@ Delivered Grid::Clear()
 	return delivered;
 }
 
+const FIntPoint Grid::GetPosFromDir(Direction dir)
+{
+	auto pos = FIntPoint(0, 0);
+
+	switch (dir)
+	{
+	case Direction::FRONT:
+		pos = FIntPoint(0, 1);
+		break;
+
+	case Direction::BACK:
+		pos = FIntPoint(0, -1);
+		break;
+
+	case Direction::LEFT:
+		pos = FIntPoint(1, 0);
+		break;
+
+	case Direction::RIGHT:
+		pos = FIntPoint(-1, 0);
+		break;
+
+	case Direction::FRONT_RIGHT:
+		pos = FIntPoint(-1, 1);
+		break;
+
+	case Direction::BACK_RIGHT:
+		pos = FIntPoint(-1, -1);
+		break;
+
+	case Direction::BACK_LEFT:
+		pos = FIntPoint(1, -1);
+		break;
+
+	case Direction::FRONT_LEFT:
+		pos = FIntPoint(1, 1);
+		break;
+
+	}
+
+	return pos;
+}
+
 Cell::ptr Grid::GetRoot()
 {
 	return root;
@@ -613,6 +622,13 @@ Cell::ptr Grid::FindLast(Direction direction)
 			if (IsValid(c->GetN(Direction::LEFT)))
 				c = c->GetN(Direction::LEFT);
 		}
+		break;
+	// TODO: 
+	case Direction::BACK_RIGHT:
+		throw;
+		break;
+	case Direction::FRONT_LEFT:
+		throw;
 		break;
 	}
 
@@ -816,6 +832,11 @@ FIntPoint Cell::GetIndex()
 void Cell::SetIndex(int x, int y)
 {
 	index = FIntPoint(x, y);
+}
+
+void Cell::SetIndex(FIntPoint pos)
+{
+	SetIndex(pos.X, pos.Y);
 }
 
 void*& Cell::GetData()
