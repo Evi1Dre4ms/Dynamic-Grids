@@ -421,16 +421,20 @@ Delivered Grid::MoveTo(int x, int y)
 		{
 			if (this == g.Get()) return false;
 
+			auto root = g->GetRoot();
+			if (!IsValid(g->GetRoot()))
+				return false;
+
 			// Find difference between positions of two grids
-			auto dt = g->GetRoot()->GetIndex() - FIntPoint(x, y);
+			auto dt = root->GetIndex() - FIntPoint(x, y);
 			dt.X = FMath::Abs(dt.X);
 			dt.Y = FMath::Abs(dt.Y);
 
-			auto half_r1 = this->GetRadius() / 2;
-			auto half_r2 = g->GetRadius() / 2;
+			// TODO: fix
+			float r1r2 = this->GetRadius() - 1 + g->GetRadius() - 1;
 
 			// Returns true if [this] inside [g], false if they TOUCH EACH OTHER!
-			return dt.X - 1 < (half_r1 + half_r2) && dt.Y - 1 < (half_r1 + half_r2);
+			return dt.X <= r1r2 && dt.Y < r1r2;
 		});
 
 	// TEMP
