@@ -145,6 +145,9 @@ namespace serenity
 		Direction IndexToDirection(FIntPoint& idx);
 		
 		bool IsCurrent(FIntPoint index);
+		bool IsInit();
+
+		TArray<Cell::ptr> GetAllCells();
 
 		// Get direction clockwise
 		Direction GetCW(Direction dir);

@@ -18,6 +18,11 @@ Cell::Direction Grid::IndexToDirection(FIntPoint& idx)
 	return Direction::UNDEFINED;
 }
 
+bool Grid::IsInit()
+{
+	return bIsInit;
+}
+
 bool Grid::IsCurrent(FIntPoint index)
 {
 	auto rootIndex = root->GetIndex();
@@ -409,6 +414,8 @@ Delivered Grid::Init(int x, int y, int radius)
 	delivered.created.Push(root);
 	delivered += Resize(radius);
 
+	bIsInit = true;
+
 	return delivered;
 }
 
@@ -428,7 +435,7 @@ Delivered Grid::MoveTo(int x, int y)
 	*/
 	auto CollideGrids = rootGrids.FilterByPredicate([&](const Grid::ptr& g)
 		{
-			if (this == g.Get()) return false;
+			if (this == g.Get() || !g->IsInit()) return false;
 
 			auto root = g->GetRoot();
 			if (!IsValid(g->GetRoot()))
@@ -529,19 +536,18 @@ Delivered Grid::Clear()
 	if (!IsValid(root)) 
 		return delivered;
 
-	TArray<Cell::ptr> toDelete;
-
-	// Collect all cells
-	auto cornerCells = SelectBorder(Direction::FRONT);
-	for (auto cc : cornerCells)
-	{
-		for (Cell::ptr i = cc; IsValid(i); i = i->GetN(Direction::BACK))
-			toDelete.Push(i);
-	}
+	TArray<Cell::ptr> toRelease = GetAllCells();
 
 	// Reset cells
-	for (auto cc : toDelete)
+	for (auto cc : toRelease)
 	{
+		// Если есть другой владелец, то уменьшаем кол-во и скип
+		if (cc->NumOwners() > 1)
+		{
+			cc->NumOwners()--;
+			continue;
+		}
+
 		// Copy data to deleted
 		delivered.deleted.Push(cc->GetData());
 
@@ -609,6 +615,24 @@ Cell::ptr Grid::GetRoot()
 int Grid::GetRadius() const
 {
 	return nRadius;
+}
+
+TArray<Cell::ptr> Grid::GetAllCells()
+{
+	TArray<Cell::ptr> Cells;
+
+	// Collect all cells
+	auto cornerCells = SelectBorder(Direction::FRONT);
+	for (auto cc : cornerCells)
+	{
+		for (Cell::ptr i = cc; IsValid(i); i = i->GetN(Direction::BACK))
+			if (IsCurrent(i->GetIndex())) 
+				Cells.Push(i);
+			else 
+				break;
+	}
+
+	return Cells;
 }
 
 Cell::ptr Grid::FindLast(Direction direction)
