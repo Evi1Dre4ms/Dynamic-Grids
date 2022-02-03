@@ -18,6 +18,15 @@ Cell::Direction Grid::IndexToDirection(FIntPoint& idx)
 	return Direction::UNDEFINED;
 }
 
+bool Grid::IsCurrent(FIntPoint index)
+{
+	auto rootIndex = root->GetIndex();
+	auto dt = index - rootIndex;
+
+	// Check if index in grid field
+	return FMath::Abs(dt.X) < nRadius && FMath::Abs(dt.Y) < nRadius;
+}
+
 Cell::Direction Grid::GetCW(Direction dir)
 {
 	switch (dir)
@@ -431,10 +440,10 @@ Delivered Grid::MoveTo(int x, int y)
 			dt.Y = FMath::Abs(dt.Y);
 
 			// TODO: fix
-			float r1r2 = this->GetRadius() - 1 + g->GetRadius() - 1;
+			int r1r2 = this->GetRadius() - 1 + g->GetRadius() - 1;
 
 			// Returns true if [this] inside [g], false if they TOUCH EACH OTHER!
-			return dt.X <= r1r2 && dt.Y < r1r2;
+			return dt.X <= r1r2 && dt.Y <= r1r2;
 		});
 
 	// TEMP
@@ -472,10 +481,9 @@ Delivered Grid::MoveTo(int x, int y)
 			{
 				ch = ch->GetN(dir);
 
-				delivered += NarrowDown(GetOpposite(dir));
 				delivered += Expand(dir, CollideGrids);
-
 				root = ch;
+				delivered += NarrowDown(GetOpposite(dir));
 			}
 		}
 
@@ -488,10 +496,12 @@ Delivered Grid::MoveTo(int x, int y)
 			{
 				ch = ch->GetN(dir);
 
-				delivered += NarrowDown(GetOpposite(dir));
 				delivered += Expand(dir, CollideGrids);
-
 				root = ch;
+				delivered += NarrowDown(GetOpposite(dir));
+				
+
+				
 			}
 		}
 	}
@@ -671,47 +681,25 @@ Cell::ptr Grid::FindCellByIndex(FIntPoint index)
 	Cell::ptr c = root;
 
 	// Axis X
-	if (FMath::Sign(dt.X) > 0) // To left X+
+	for (int i = 0; i < FMath::Abs(dt.X) && IsValid(c); i++)
 	{
-		for (int i = 0; i < dt.X && IsValid(c); i++)
-		{
-			if (IsValid(c->GetN(Direction::LEFT)))
-				c = c->GetN(Direction::LEFT);
-			else
-				throw;
-		}
-	}
-	else if (FMath::Sign(dt.X) < 0) // To right X-
-	{
-		for (int i = 0; i > dt.X && IsValid(c); i--)
-		{
-			if (IsValid(c->GetN(Direction::RIGHT)))
-				c = c->GetN(Direction::RIGHT);
-			else
-				throw;
-		}
+		Dir dir = FMath::Sign(dt.X) > 0 ? Dir::LEFT : Dir::RIGHT;
+
+		if (IsValid(c->GetN(dir)))
+			c = c->GetN(dir);
+		else
+			throw "The current grid has lost a cell";
 	}
 
 	// Axis Y
-	if (FMath::Sign(dt.Y) > 0) // To left X+
+	for (int i = 0; i < FMath::Abs(dt.Y) && IsValid(c); i++)
 	{
-		for (int i = 0; i < dt.Y && IsValid(c); i++)
-		{
-			if (IsValid(c->GetN(Direction::FRONT)))
-				c = c->GetN(Direction::FRONT);
-			else
-				throw;
-		}
-	}
-	else if (FMath::Sign(dt.Y) < 0) // To right X-
-	{
-		for (int i = 0; i > dt.Y && IsValid(c); i--)
-		{
-			if (IsValid(c->GetN(Direction::BACK)))
-				c = c->GetN(Direction::BACK);
-			else
-				throw;
-		}
+		Dir dir = FMath::Sign(dt.Y) > 0 ? Dir::FRONT : Dir::BACK;
+
+		if (IsValid(c->GetN(dir)))
+			c = c->GetN(dir);
+		else
+			throw "The current grid has lost a cell";
 	}
 
 	return c;
@@ -909,9 +897,21 @@ Delivered Grid::NarrowDown(Direction direction)
 	TArray<Cell::ptr> toUnlink;
 
 	// Find border chunks
-	TArray<Cell::ptr> toRemove = SelectBorder(direction);
+	TArray<Cell::ptr> border = SelectBorder(direction);
+
+	// Get chunks to unlink/remove
+	TArray<Cell::ptr> toRemove;
+	for (auto cc : border)
+	{
+		if (IsValid(cc) && IsValid(cc->GetN(direction)))
+			toRemove.Push(cc->GetN(direction));
+	}
+
 	for (auto cc : toRemove)
 	{
+		if (!IsValid(cc)) 
+			continue;
+
 		// Если есть другой владелец, то уменьшаем кол-во и скип
 		if (cc->NumOwners() > 1)
 		{
@@ -919,30 +919,34 @@ Delivered Grid::NarrowDown(Direction direction)
 			continue;
 		}
 
-		if (!IsValid(cc)) continue;
-
-		toUnlink.Push(cc->GetN(inversedDir));
+		// toUnlink.Push(cc->GetN(inversedDir));
 		delivered.deleted.Push(cc->GetData());
 		
 		// Reset current cell
 		cc->Reset();
 	}
 
+	// IMPORTANT: fix bug with unlink or do not unlink at all.
 	// Unlink not valid chunks
 	// TODO: maybe some optimization
-	for (auto cc : toUnlink)
+	for (auto cc : border)
 	{
-		if (!IsValid(cc)) continue;
+		/*cc->SetN(direction,			nullptr);
+		cc->SetN(GetCW(direction),	nullptr);
+		cc->SetN(GetCCW(direction), nullptr);*/
 
 		// Unlink
-		for (int idx = 0; idx < 8; idx++)
-		{
-			Direction dir = static_cast<Direction>(idx);
+		//for (int idx = 0; idx < 8; idx++)
+		//{
+		//	Direction dir = static_cast<Direction>(idx);
 
-			// If not valid -> reset pointers for 'cc'
-			if (!cc->GetN(dir))
-				cc->SetN(dir, nullptr);
-		}
+		//	// If not valid -> reset pointers for 'cc'
+		//	if (!IsValid(cc->GetN(dir)))
+		//		cc->SetN(dir, nullptr);
+
+		//	if (IsValid(cc->GetN(dir)) && !IsCurrent(cc->GetN(dir)->GetIndex()))
+		//		cc->SetN(dir, nullptr);
+		//}
 	}
 
 	return delivered;

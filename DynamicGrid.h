@@ -144,6 +144,8 @@ namespace serenity
 
 		Direction IndexToDirection(FIntPoint& idx);
 		
+		bool IsCurrent(FIntPoint index);
+
 		// Get direction clockwise
 		Direction GetCW(Direction dir);
 
