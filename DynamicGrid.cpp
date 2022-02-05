@@ -433,34 +433,7 @@ Delivered Grid::MoveTo(int x, int y)
 	/* Manage cells of this grid that goes to field of another grids
 	* 1: First we need to find list of grids which collides with current grid after moving
 	*/
-	auto CollideGrids = rootGrids.FilterByPredicate([&](const Grid::ptr& g)
-		{
-			if (this == g.Get() || !g->IsInit()) return false;
-
-			auto root = g->GetRoot();
-			if (!IsValid(g->GetRoot()))
-				return false;
-
-			// Find difference between positions of two grids
-			auto dt = root->GetIndex() - FIntPoint(x, y);
-			dt.X = FMath::Abs(dt.X);
-			dt.Y = FMath::Abs(dt.Y);
-
-			// TODO: fix
-			int r1r2 = this->GetRadius() - 1 + g->GetRadius() - 1;
-
-			// Returns true if [this] inside [g], false if they TOUCH EACH OTHER!
-			return dt.X <= r1r2 && dt.Y <= r1r2;
-		});
-
-	// TEMP
-	for (auto grid : CollideGrids)
-	{
-		check(GEngine != nullptr);
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Turquoise, "Collided.");
-
-		break;
-	}
+	// auto CollideGrids = FindCollidedGrids(FIntPoint(x, y), this->GetRadius());
 
 	// Find difference between new and old positions
 	auto dt = FIntPoint(x, y) - root->GetIndex();
@@ -488,6 +461,7 @@ Delivered Grid::MoveTo(int x, int y)
 			{
 				ch = ch->GetN(dir);
 
+				auto CollideGrids = FindCollidedGrids(root->GetIndex() + FIntPoint(FMath::Sign(dt.X), 0), this->GetRadius());
 				delivered += Expand(dir, CollideGrids);
 				root = ch;
 				delivered += NarrowDown(GetOpposite(dir));
@@ -503,6 +477,7 @@ Delivered Grid::MoveTo(int x, int y)
 			{
 				ch = ch->GetN(dir);
 
+				auto CollideGrids = FindCollidedGrids(root->GetIndex() + FIntPoint(0, FMath::Sign(dt.Y)), this->GetRadius());
 				delivered += Expand(dir, CollideGrids);
 				root = ch;
 				delivered += NarrowDown(GetOpposite(dir));
@@ -687,9 +662,26 @@ Cell::ptr Grid::FindLast(Direction direction)
 	return c;
 }
 
-TArray<Grid::ptr> Grid::FindCollidedGrids()
+TArray<Grid::ptr> Grid::FindCollidedGrids(FIntPoint index, int radius)
 {
-	return {};
+	return rootGrids.FilterByPredicate([&](const Grid::ptr& g)
+		{
+			if (this == g.Get() || !g->IsInit()) return false;
+
+			if (!IsValid(g->GetRoot()))
+				return false;
+
+			// Find difference between positions of two grids
+			auto dt = g->GetRoot()->GetIndex() - index;
+			dt.X = FMath::Abs(dt.X);
+			dt.Y = FMath::Abs(dt.Y);
+
+			//
+			int r1r2 = radius - 1 + g->GetRadius() - 1;
+
+			// Returns true if [this] inside [g], false if they TOUCH EACH OTHER!
+			return dt.X <= r1r2 && dt.Y <= r1r2;
+		});;
 }
 
 Cell::ptr Grid::FindCellByIndex(FIntPoint index)

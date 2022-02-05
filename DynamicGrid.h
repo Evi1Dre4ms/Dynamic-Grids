@@ -113,6 +113,9 @@ namespace serenity
 		const FIntPoint GetPosFromDir(Direction dir);
 
 		int GetRadius() const;
+		TArray<Cell::ptr> GetAllCells();
+
+
 
 	private:
 
@@ -140,14 +143,12 @@ namespace serenity
 
 		Cell::ptr FindLast(Direction direction);
 		Cell::ptr FindCellByIndex(FIntPoint index);
-		TArray<Grid::ptr> FindCollidedGrids();
+		TArray<Grid::ptr> FindCollidedGrids(FIntPoint index, int radius);
 
 		Direction IndexToDirection(FIntPoint& idx);
 		
 		bool IsCurrent(FIntPoint index);
 		bool IsInit();
-
-		TArray<Cell::ptr> GetAllCells();
 
 		// Get direction clockwise
 		Direction GetCW(Direction dir);
