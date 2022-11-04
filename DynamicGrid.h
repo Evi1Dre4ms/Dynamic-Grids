@@ -4,24 +4,43 @@
 
 namespace serenity
 {
+	enum class Direction : uint8_t
+	{
+		FRONT,
+		BACK,
+		LEFT,
+		RIGHT,
+		FRONT_RIGHT,
+		BACK_RIGHT,
+		BACK_LEFT,
+		FRONT_LEFT,
+		TOP,
+		BOTTOM,
+		UNDEFINED
+	};
+
+	static TMap<FString, Direction> DirectionToEnum = {
+		{"FRONT",		Direction::FRONT},
+		{"BACK",		Direction::BACK},
+		{"LEFT",		Direction::LEFT},
+		{"RIGHT",		Direction::RIGHT},
+		{"FRONT_RIGHT", Direction::FRONT_RIGHT},
+		{"BACK_RIGHT",	Direction::BACK_RIGHT},
+		{"BACK_LEFT",	Direction::BACK_LEFT},
+		{"FRONT_LEFT",	Direction::FRONT_LEFT},
+		{"TOP",			Direction::TOP},
+		{"BOTTOM",		Direction::BOTTOM},
+		{"UNDEFINED",	Direction::UNDEFINED}
+	};
+
+	static Direction GetOpposite(Direction side);
+	static FIntVector GetVector(Direction side);
+
 	class Cell
 	{
 	public:
 		typedef TSharedPtr<Cell> ptr;
 		typedef TWeakPtr<Cell> w_ptr;
-
-		enum class Direction : uint8_t
-		{
-			FRONT,
-			BACK,
-			LEFT,
-			RIGHT,
-			FRONT_RIGHT,
-			BACK_RIGHT,
-			BACK_LEFT,
-			FRONT_LEFT,
-			UNDEFINED
-		};
 
 		static Cell::ptr MakeCell(FIntPoint index = FIntPoint(0, 0));
 
@@ -46,8 +65,7 @@ namespace serenity
 		bool bIsReseted = false;
 
 	protected:
-		
-		
+
 		bool bIsValid = false;
 
 		size_t nNumOwners = 1;
@@ -82,8 +100,7 @@ namespace serenity
 	class Grid
 	{
 	public:
-		typedef Cell::Direction Direction;
-		typedef Cell::Direction Dir;
+		typedef Direction Dir;
 		typedef TSharedPtr<Grid> ptr;
 
 	public:
@@ -115,7 +132,8 @@ namespace serenity
 		int GetRadius() const;
 		TArray<Cell::ptr> GetAllCells();
 
-
+		Cell::ptr FindCellByIndex(FIntPoint index);
+		Cell::ptr FindCellByIndex(int x, int y);
 
 	private:
 
@@ -142,7 +160,6 @@ namespace serenity
 		TArray<Cell::ptr> SelectBorder(Direction direction);
 
 		Cell::ptr FindLast(Direction direction);
-		Cell::ptr FindCellByIndex(FIntPoint index);
 		TArray<Grid::ptr> FindCollidedGrids(FIntPoint index, int radius);
 
 		Direction IndexToDirection(FIntPoint& idx);
@@ -168,7 +185,7 @@ namespace serenity
 	class GridManager
 	{
 	public:
-		typedef Cell::Direction Direction;
+		typedef TSharedPtr<GridManager> ptr;
 
 		GridManager();
 		~GridManager();

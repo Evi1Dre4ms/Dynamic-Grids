@@ -2,9 +2,43 @@
 
 using namespace serenity;
 
+Direction GetOpposite(Direction side) {
+	switch (side)
+	{
+		case Direction::FRONT:			return Direction::BACK;
+		case Direction::BACK:			return Direction::FRONT;
+		case Direction::RIGHT:			return Direction::LEFT;
+		case Direction::LEFT:			return Direction::RIGHT;
+		case Direction::TOP:			return Direction::BOTTOM;
+		case Direction::BOTTOM:			return Direction::TOP;
+		case Direction::FRONT_RIGHT:	return Direction::BACK_LEFT;
+		case Direction::BACK_LEFT:		return Direction::FRONT_RIGHT;
+		case Direction::FRONT_LEFT:		return Direction::BACK_RIGHT;
+		case Direction::BACK_RIGHT:		return Direction::FRONT_LEFT;
+	}
+
+	return Direction::UNDEFINED;
+}
+
+FIntVector GetVector(Direction side)
+{
+	switch (side) 
+	{
+		case Direction::TOP:	return FIntVector(0, 0, 1);
+		case Direction::BOTTOM:	return FIntVector(0, 0, -1);
+		case Direction::FRONT:	return FIntVector(0, 1, 0);
+		case Direction::BACK:	return FIntVector(0, -1, 0);
+		case Direction::RIGHT:	return FIntVector(-1, 0, 0);
+		case Direction::LEFT:	return FIntVector(1, 0, 0);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("GetVector: undefined side."));
+	return FIntVector(0, 0, 0);
+}
+
 Grid::Grid(TArray<Grid::ptr>& grids) : rootGrids(grids) {}
 
-Cell::Direction Grid::IndexToDirection(FIntPoint& idx)
+Direction Grid::IndexToDirection(FIntPoint& idx)
 {
 	if		(idx.X ==  0  && idx.Y ==  1)		return Direction::FRONT;
 	else if (idx.X ==  0  && idx.Y == -1)		return Direction::BACK;
@@ -16,6 +50,49 @@ Cell::Direction Grid::IndexToDirection(FIntPoint& idx)
 	else if (idx.X ==  1  && idx.Y == -1)		return Direction::BACK_LEFT;
 
 	return Direction::UNDEFINED;
+}
+
+const FIntPoint Grid::GetPosFromDir(Direction dir)
+{
+	auto pos = FIntPoint(0, 0);
+
+	switch (dir)
+	{
+	case Direction::FRONT:
+		pos = FIntPoint(0, 1);
+		break;
+
+	case Direction::BACK:
+		pos = FIntPoint(0, -1);
+		break;
+
+	case Direction::LEFT:
+		pos = FIntPoint(1, 0);
+		break;
+
+	case Direction::RIGHT:
+		pos = FIntPoint(-1, 0);
+		break;
+
+	case Direction::FRONT_RIGHT:
+		pos = FIntPoint(-1, 1);
+		break;
+
+	case Direction::BACK_RIGHT:
+		pos = FIntPoint(-1, -1);
+		break;
+
+	case Direction::BACK_LEFT:
+		pos = FIntPoint(1, -1);
+		break;
+
+	case Direction::FRONT_LEFT:
+		pos = FIntPoint(1, 1);
+		break;
+
+	}
+
+	return pos;
 }
 
 bool Grid::IsInit()
@@ -32,7 +109,7 @@ bool Grid::IsCurrent(FIntPoint index)
 	return FMath::Abs(dt.X) < nRadius && FMath::Abs(dt.Y) < nRadius;
 }
 
-Cell::Direction Grid::GetCW(Direction dir)
+Direction Grid::GetCW(Direction dir)
 {
 	switch (dir)
 	{
@@ -72,7 +149,7 @@ Cell::Direction Grid::GetCW(Direction dir)
 	return Direction::UNDEFINED;
 }
 
-Cell::Direction Grid::GetCCW(Direction dir)
+Direction Grid::GetCCW(Direction dir)
 {
 	switch (dir)
 	{
@@ -112,7 +189,7 @@ Cell::Direction Grid::GetCCW(Direction dir)
 	return Direction::UNDEFINED;
 }
 
-Cell::Direction Grid::GetOpposite(Direction dir)
+Direction Grid::GetOpposite(Direction dir)
 {
 	switch (dir)
 	{
@@ -539,49 +616,6 @@ Delivered Grid::Clear()
 	return delivered;
 }
 
-const FIntPoint Grid::GetPosFromDir(Direction dir)
-{
-	auto pos = FIntPoint(0, 0);
-
-	switch (dir)
-	{
-	case Direction::FRONT:
-		pos = FIntPoint(0, 1);
-		break;
-
-	case Direction::BACK:
-		pos = FIntPoint(0, -1);
-		break;
-
-	case Direction::LEFT:
-		pos = FIntPoint(1, 0);
-		break;
-
-	case Direction::RIGHT:
-		pos = FIntPoint(-1, 0);
-		break;
-
-	case Direction::FRONT_RIGHT:
-		pos = FIntPoint(-1, 1);
-		break;
-
-	case Direction::BACK_RIGHT:
-		pos = FIntPoint(-1, -1);
-		break;
-
-	case Direction::BACK_LEFT:
-		pos = FIntPoint(1, -1);
-		break;
-
-	case Direction::FRONT_LEFT:
-		pos = FIntPoint(1, 1);
-		break;
-
-	}
-
-	return pos;
-}
-
 Cell::ptr Grid::GetRoot()
 {
 	return root;
@@ -719,6 +753,11 @@ Cell::ptr Grid::FindCellByIndex(FIntPoint index)
 	}
 
 	return c;
+}
+
+Cell::ptr Grid::FindCellByIndex(int x, int y)
+{
+	return FindCellByIndex(FIntPoint(x, y));
 }
 
 TArray<Cell::ptr> Grid::SelectBorder(Direction direction)
