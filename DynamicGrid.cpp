@@ -24,12 +24,12 @@ FIntVector GetVector(Direction side)
 {
 	switch (side) 
 	{
+		case Direction::FRONT:	return FIntVector(1, 0, 0);
+		case Direction::BACK:	return FIntVector(-1, 0, 0);
+		case Direction::RIGHT:	return FIntVector(0, 1, 0);
+		case Direction::LEFT:	return FIntVector(0, -1, 0);
 		case Direction::TOP:	return FIntVector(0, 0, 1);
 		case Direction::BOTTOM:	return FIntVector(0, 0, -1);
-		case Direction::FRONT:	return FIntVector(0, 1, 0);
-		case Direction::BACK:	return FIntVector(0, -1, 0);
-		case Direction::RIGHT:	return FIntVector(-1, 0, 0);
-		case Direction::LEFT:	return FIntVector(1, 0, 0);
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("GetVector: undefined side."));
@@ -40,14 +40,14 @@ Grid::Grid(TArray<Grid::ptr>& grids) : rootGrids(grids) {}
 
 Direction Grid::IndexToDirection(FIntPoint& idx)
 {
-	if		(idx.X ==  0  && idx.Y ==  1)		return Direction::FRONT;
-	else if (idx.X ==  0  && idx.Y == -1)		return Direction::BACK;
-	else if (idx.X ==  1  && idx.Y ==  0)		return Direction::LEFT;
-	else if (idx.X == -1  && idx.Y ==  0)		return Direction::RIGHT;
-	else if (idx.X == -1  && idx.Y ==  1)		return Direction::FRONT_RIGHT;
-	else if (idx.X ==  1  && idx.Y ==  1)		return Direction::FRONT_LEFT;
-	else if (idx.X == -1  && idx.Y == -1)		return Direction::BACK_RIGHT;
-	else if (idx.X ==  1  && idx.Y == -1)		return Direction::BACK_LEFT;
+	if		(idx.X ==  1  && idx.Y ==  0)		return Direction::FRONT;
+	else if (idx.X == -1  && idx.Y ==  0)		return Direction::BACK;
+	else if (idx.X ==  0  && idx.Y == -1)		return Direction::LEFT;
+	else if (idx.X ==  0  && idx.Y ==  1)		return Direction::RIGHT;
+	else if (idx.X ==  1  && idx.Y ==  1)		return Direction::FRONT_RIGHT;
+	else if (idx.X ==  1  && idx.Y == -1)		return Direction::FRONT_LEFT;
+	else if (idx.X == -1  && idx.Y ==  1)		return Direction::BACK_RIGHT;
+	else if (idx.X == -1  && idx.Y == -1)		return Direction::BACK_LEFT;
 
 	return Direction::UNDEFINED;
 }
@@ -59,37 +59,32 @@ const FIntPoint Grid::GetPosFromDir(Direction dir)
 	switch (dir)
 	{
 	case Direction::FRONT:
-		pos = FIntPoint(0, 1);
-		break;
-
-	case Direction::BACK:
-		pos = FIntPoint(0, -1);
-		break;
-
-	case Direction::LEFT:
 		pos = FIntPoint(1, 0);
 		break;
-
-	case Direction::RIGHT:
+	case Direction::BACK:
 		pos = FIntPoint(-1, 0);
 		break;
 
+	case Direction::RIGHT:
+		pos = FIntPoint(0, 1);
+		break;
+	case Direction::LEFT:
+		pos = FIntPoint(0, -1);
+		break;
+
 	case Direction::FRONT_RIGHT:
-		pos = FIntPoint(-1, 1);
+		pos = FIntPoint(1, 1);
 		break;
-
-	case Direction::BACK_RIGHT:
-		pos = FIntPoint(-1, -1);
-		break;
-
-	case Direction::BACK_LEFT:
+	case Direction::FRONT_LEFT:
 		pos = FIntPoint(1, -1);
 		break;
 
-	case Direction::FRONT_LEFT:
-		pos = FIntPoint(1, 1);
+	case Direction::BACK_RIGHT:
+		pos = FIntPoint(-1, 1);
 		break;
-
+	case Direction::BACK_LEFT:
+		pos = FIntPoint(-1, -1);
+		break;
 	}
 
 	return pos;
@@ -532,7 +527,7 @@ Delivered Grid::MoveTo(int x, int y)
 		// For X axis
 		for (int i = 0; i < FMath::Abs(dt.X) && IsValid(ch); i++)
 		{
-			Dir dir = FMath::Sign(dt.X) > 0 ? Dir::LEFT : Dir::RIGHT;
+			Dir dir = FMath::Sign(dt.X) > 0 ? Dir::FRONT : Dir::BACK;
 
 			if (IsValid(ch->GetN(dir)))
 			{
@@ -548,7 +543,7 @@ Delivered Grid::MoveTo(int x, int y)
 		// For Y axis
 		for (int i = 0; i < FMath::Abs(dt.Y) && IsValid(ch); i++)
 		{
-			Dir dir = FMath::Sign(dt.Y) > 0 ? Dir::FRONT : Dir::BACK;
+			Dir dir = FMath::Sign(dt.Y) > 0 ? Dir::RIGHT : Dir::LEFT;
 
 			if (IsValid(ch->GetN(dir)))
 			{
@@ -666,6 +661,7 @@ Cell::ptr Grid::FindLast(Direction direction)
 			}
 		}
 		break;
+
 
 	case Direction::FRONT_RIGHT: // go to last FRONT, then go to last RIGHT
 		c = FindLast(Dir::FRONT);
@@ -924,6 +920,7 @@ Delivered Grid::NarrowDown(Direction direction)
 	if (!IsValid(root)) return delivered;
 
 	// Check direction
+	//TODO: заменить на GetInversed функцию
 	Direction inversedDir = Direction::UNDEFINED;
 	switch (direction)
 	{
