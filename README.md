@@ -9,8 +9,8 @@ For example, this can be used on a game server with a generated world, where it 
 
 # Todo
 
-The library is in alpha version.
-There is currently no support for multithreading.
-The code is adapted to the Unreal Engine 4 API, but you can replace smart pointers and containers with those in the STL library.
-There are no speed tests and I think that optimization is needed here.
-Also, to store custom data in cells, I use something like std::any from stl, but I think you can make using the library more convenient through templates.
+The library is in alpha version.  <br />
+There is currently no support for multithreading.  <br />
+The code is adapted to the Unreal Engine 4 API, but you can replace smart pointers and containers with those in the STL library.  <br />
+There are no speed tests and I think that optimization is needed here.  <br />
+Also, to store custom data in cells, I use something like std::any from stl, but I think you can make using the library more convenient through templates.  <br />
